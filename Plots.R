@@ -13,7 +13,7 @@ options(scipen=999)
 
 
 # ------------------------------------------------------------------------------------------------
-# Aux Functions ----------------------------------------------------------------------------------
+# Functions --------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------
 
 openPDFEPS <- function(file, height= PDFheight, width= PDFwidth, PDFEPS = 1) {
@@ -49,6 +49,7 @@ RankDiff <- function(files = c(),
                       folder = "./",
                         diffs = c()){
   
+  
   for(i in 1:length(files)){
     print(paste("------------", files[i]))
     data <- read.csv(paste0(folder,files[i]))
@@ -71,18 +72,21 @@ RankDiff <- function(files = c(),
     write.csv(data.c, file = file)
     
   }
+  # ggplot(data.c, aes(difficulty_bin)) + geom_histogram() + facet_grid(template_id~engine)
+  
 }
 
 
 
-# ------------------------------------------------------------------------------------------------
-# Difficulty Computation from LLMs Results -------------------------------------------------------
-# ------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+
+# Let's compute the difficulties
 
 # Common Transforms
 
-if (FALSE){ # Run only one
+if (FALSE){
   
+
 filesCT <- c("InstanceResults/GPT/CommonTransforms_results.csv","InstanceResults/LLAMA/CommonTransforms_results.csv","InstanceResults/BLOOM/CommonTransforms_results.csv")
 
 for(i in 1:length(filesCT)){
@@ -137,26 +141,69 @@ for(i in 1:length(filesOB)){
 }
 
 
-# ------------------------------------------------------------------------------------------------
-# Difficulty transformations (Logistic)  ---------------------------------------------------------
-# ------------------------------------------------------------------------------------------------
+# Let's compute the LMs transformations
 
-if (FALSE) { # Run only one
 
+if (FALSE) {
+# [1] "addition_results.csv"         "anagram_results.csv"          "CommonTransforms_results.csv" "GPQA_results.csv"             "locality_results.csv"        
+# [6] "OpenBookQA_results.csv" 
+
+
+# BenchsInfo <- data.frame(bench = c("addition_results.csv", "anagram_results.csv", "locality_results.csv", "CommonTransforms_results.csv", "GPQA_results.csv", "OpenBookQA_results.csv"),
+#                        coeff = c(1.38, 4.41, 5721132432741.87, 0.09, 2.11, 36.68),
+#                        inter = c(39.4, 11.78, 92.23, 43.19, 70.75, 27.95),
+#                        diff2use = c("diff1", "letters", "city_frequency", "diffCT","diffGPQA","diffOB")
+#                        )
+# 
+# filesGPT <- list.files(path = "InstanceResults/GPT", pattern = "*results.csv")
+# filesBLOOM <- list.files(path = "InstanceResults/BLOOM", pattern = "*results.csv")
+# filesLLAMA <- list.files(path = "InstanceResults/LLAMA", pattern = "*results.csv")
+# 
+# # BenchsInfo$diff2use[BenchsInfo$bench == files[i]]
+# # files <- c("addition_results.csv")
+# # folder = "InstanceResults/GPT/"
+# 
+# lmDiffs <- function(files = c(), folder = "./", BenchsInfo = ""){
+#   
+#   for(i in 1:length(files)){
+#     print(paste("------------", files[i]))
+#     data <- read.csv(paste0(folder, files[i]))
+#     
+#     diff <- BenchsInfo$diff2use[BenchsInfo$bench == files[i]]
+#     coeff <- BenchsInfo$coeff[BenchsInfo$bench == files[i]]
+#     inter <- BenchsInfo$inter[BenchsInfo$bench == files[i]]
+#     
+#     data$diffLM <- coeff*data[,diff]+inter
+#     
+#     file = paste0(folder, stringr::str_split(files[i],".csv")[[1]][1],"_lm.csv")
+#     write.csv(data, file = file)
+# 
+#     }
+# }
+# 
+# lmDiffs(files = filesGPT, folder = "InstanceResults/GPT/", BenchsInfo)
+# lmDiffs(files = filesBLOOM, folder = "InstanceResults/BLOOM/", BenchsInfo)
+# lmDiffs(files = filesLLAMA, folder = "InstanceResults/LLAMA/", BenchsInfo)
+# 
+# }
   
   BenchsInfo <- data.frame(bench = c("addition_results.csv", "anagram_results.csv", "locality_results.csv", "CommonTransforms_results.csv", "GPQA_results.csv", "OpenBookQA_results.csv"),
                            coeff = c(1.38, 4.41, 5721132432741.87, 0.09, 2.11, 36.68),
                            inter = c(39.4, 11.78, 92.23, 43.19, 70.75, 27.95),
-                           k = c(-0.4439728610, -0.3762802261, -4976217230693.6826171875, -0.0088305122, -11.7171356764, -1.9778281678),
-                           x0 = c(4.26207630219483580, 6.95535076420780207, -0.00000000000049264,   52.64354746274378272, 0.50233541730452780, 0.26844524771814970),
-                           diff2use = c("diff1", "letters", "city_frequency", "diffCT","diffGPQA","diffOB")
+                           # k = c(-0.4439728610, -0.3762802261, -4976217230693.6826171875, -0.0088305122, -11.7171356764, -1.9778281678),
+                           # x0 = c(4.26207630219483580, 6.95535076420780207, -0.00000000000049264,   52.64354746274378272, 0.50233541730452780, 0.26844524771814970),
+                           k = c(-0.6144290618, -0.3563181881, -4500282863810.5439453125,  -0.0081846259, -7.7164651686, -1.9884014487), #June
+                           x0 = c(1.98940928825976870, 7.02546509820528975,  -0.00000000000053249, 50.14616771668702455, 0.41647384497226519, 0.26651002768501025), #June
+                           diff2use = c("carry", "letters", "city_frequency", "diffCT","diffGPQA","diffOB")
   )
   
   filesGPT <- list.files(path = "InstanceResults/GPT", pattern = "*results.csv")
   filesBLOOM <- list.files(path = "InstanceResults/BLOOM", pattern = "*results.csv")
   filesLLAMA <- list.files(path = "InstanceResults/LLAMA", pattern = "*results.csv")
   
-
+    # BenchsInfo$diff2use[BenchsInfo$bench == files[i]]
+  # files <- c("anagram_results.csv")
+  # folder = "InstanceResults/GPT/"
   
   logDiffs <- function(files = c(), folder = "./", BenchsInfo = ""){
     
@@ -197,7 +244,7 @@ if (FALSE) { # Run only one
         newdiff <- newdiff * 100 / 75
       }
       
-      print(paste0(files[i], "-> max: ", range(newdiff)[1], " - min: ", range(newdiff)[2]))
+      print(paste0(files[i], "-> min: ", range(newdiff)[1], " - max: ", range(newdiff)[2]))
       
       
       # Storing results in the dataframe
@@ -221,13 +268,11 @@ if (FALSE) { # Run only one
 }
 
 
-# ------------------------------------------------------------------------------------------------
-# Merge OpenBook & GPQA into ScienceQA  ----------------------------------------------------------
-# ------------------------------------------------------------------------------------------------
 
 
-if (FALSE) { # Run only one
-  
+
+# Let's create Science QA
+
 filesGPQA <- c("InstanceResults/GPT/GPQA_results_log.csv","InstanceResults/LLAMA/GPQA_results_log.csv","InstanceResults/BLOOM/GPQA_results_log.csv")
 filesOB <- c("InstanceResults/GPT/OpenBookQA_results_log.csv","InstanceResults/LLAMA/OpenBookQA_results_log.csv","InstanceResults/BLOOM/OpenBookQA_results_log.csv")
 folder <- c("InstanceResults/GPT/", "InstanceResults/LLAMA/", "InstanceResults/BLOOM/")
@@ -249,9 +294,7 @@ for(i in 1:length(filesGPQA)){
   
   write.csv(data_ScienceQA, file = file)
   
-}
-
-}
+  }
 
 # ------------------------------------------------------------------------------------------------
 # Binnarise Difficulty ---------------------------------------------------------------------------
@@ -271,6 +314,11 @@ if(FALSE){
   RankDiff(files = filesGPT, folder = "InstanceResults/BLOOM/", diffs = diff2use)
   RankDiff(files = filesGPT, folder = "InstanceResults/LLAMA/", diffs = diff2use)
 }
+
+
+
+
+
 
 
 # ------------------------------------------------------------------------------------------------
@@ -312,8 +360,18 @@ dev.off()
 
 
 # ------------------------------------------------------------------------------------------------
-# Plotting Promts --------------------------------------------------------------------------------
+# Plotting Prompts -------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------
+
+# files = GPT.bins;
+# folder = "InstanceResults/GPT/";
+# diffs = diff2use;
+# engines = GPT.engines
+# coloursBW = c("#e63946","#1d3557")
+# ColourTitle = "black"
+# outcome2show = "CORRECT"
+# selModels <- c("GPT-3 Davinci", "text-davinci-003", "GPT-4 v2")
+
 
 plotPrompts <- function(files = c(),
                         folder = "./",
@@ -360,25 +418,41 @@ plotPrompts <- function(files = c(),
     
     
     listPlots[[i]] <- ggplot(filter(data.summ, outcome == outcome2show, engine %in% selModels), aes(difficulty_bin, freqOutcome)) + 
+      # geom_point(aes(group = template_id), alpha = 0.05, size = 0.7) + 
       geom_line(aes(group = template_id), alpha = 0.05) + 
-
+      # geom_smooth(colour = "#a8dadc", fill = "#a8dadc", size = 0.7, linetype = "dashed") +
+      
+      # geom_point(data = filter(maxSlice.data, outcome == outcome2show), aes(difficulty_bin, freqOutcome, group = template_id), colour = "#e63946", size = 0.7) + 
+      
+      
+    
       geom_line(data = filter(maxSlice.data, outcome == outcome2show, engine %in% selModels), aes(difficulty_bin, freqOutcome, group = template_id, label = template_id), colour = coloursBW[1])  +
       geom_label_repel(data = filter(maxSlice.data, outcome == outcome2show, difficulty_bin == 10, engine %in% selModels), aes(difficulty_bin, freqOutcome, group = template_id, label = template_id), colour = coloursBW[1], size = 3,linewidth = 1, 
                      fontface = "bold",
+                     # point.padding = 0.2, 
+                     # nudge_y = 0.02,
                      box.padding = 0.5, max.overlaps = Inf, alpha = 0.7, direction = "y") +
       
+      # geom_point(data = filter(minSlice.data, outcome == outcome2show), aes(difficulty_bin, freqOutcome, group = template_id), colour = "#1d3557", size = 0.7) +
       geom_line(data = filter(minSlice.data, outcome == outcome2show, engine %in% selModels), aes(difficulty_bin, freqOutcome, group = template_id, label = template_id), colour = coloursBW[2]) +
       geom_label_repel(data = filter(minSlice.data, outcome == outcome2show, difficulty_bin == 20, engine %in% selModels), aes(difficulty_bin, freqOutcome, group = template_id, label = template_id), colour = coloursBW[2], size = 3,linewidth = 1,linewidth = 1, 
                      fontface = "bold",
+                     # point.padding = 0.2, 
+                     # nudge_y = 0.02,
                      box.padding = 0.5, max.overlaps = Inf, alpha = 0.7, direction = "y") + 
       
+      # scale_x_continuous(expand=c(0, 1)) +
       scale_x_continuous(breaks = c(1,15,30), labels = xRange)  +
       
       scale_y_continuous(limits=c(0, 1))   +   
       
+      # geom_dl(data = filter(maxSlice.data, outcome == outcome2show), aes(label = template_id), method = list(dl.trans(x = x - 0.25, y = y+0.25), "last.points", cex = 0.8), colour = "#e63946") +
+      # geom_dl(data = filter(minSlice.data, outcome == outcome2show), aes(label = template_id), method = list(dl.trans(x = x - 0.25, y = y+0.25), "last.points", cex = 0.8), colour = "#1d3557") +
+      
       facet_wrap(~engine, nrow = 1) +  
       
       xlab("Difficulty") + ylab("") + 
+      # labs(title = stringr::str_split(files[i],"_")[[1]][1],  subtitle = outcome2show) +
       labs(title = paste0("<strong><span style='color:black; font-size:13pt;'>",titles[i],"</span></strong> - <strong><span style='color:",ColourTitle,"; font-size:13pt;'>",outcome2show,"</span></strong>")) +
       
       theme_minimal() +
@@ -397,130 +471,126 @@ plotPrompts <- function(files = c(),
 }
 
 
+GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
+LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
+BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
 
-if (FALSE) { # Plots generation 
+GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
+LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
+BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
 
-  GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
-  LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
-  BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
-  
-  GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
-  LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
-  BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
-  
-  titles <- c("addition", "anagram", "transforms", "locality", "science")
-  
-  GPTselModels <- c("GPT-3 Davinci", "text-davinci-003", "GPT-4 v2")
-  LlamaselModels <- c("LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-70b-chat")
-  
-  # ----- GPT -----
-  
-  # Selection
-  allPlots  <- c(
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
-  )
-  
-  openPDFEPS(paste0("PromptSensitivity_GPT_Oldy_Selection"),width=18,height=10)
-  grid.arrange(allPlots[[6]],allPlots[[11]],allPlots[[1]],
-               allPlots[[7]],allPlots[[12]],allPlots[[2]],
-               allPlots[[9]],allPlots[[14]],allPlots[[4]],
-               allPlots[[10]],allPlots[[15]],allPlots[[5]],
-               allPlots[[8]],allPlots[[13]],allPlots[[3]],
-               ncol = 3)
-  dev.off()  
-  
-  # All
-  allPlots  <- c(
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
-    plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
-  )
-  
-  openPDFEPS(paste0("PromptSensitivity_GPT_Oldy_All"),width=18,height=22)
-  grid.arrange(
-    
-    allPlots[[6]],
-    allPlots[[7]],
-    allPlots[[9]],
-    allPlots[[10]],
-    allPlots[[8]],
-    
-    allPlots[[11]],
-    allPlots[[12]],
-    allPlots[[14]],
-    allPlots[[15]],
-    allPlots[[13]],
-    
-    allPlots[[1]],
-    allPlots[[2]],
-    allPlots[[4]],
-    allPlots[[5]],
-    allPlots[[3]],
-    ncol = 1)
-  dev.off()  
-  
-  
-  # ----- LLAMA -----
-  
-  # Selection
-  allPlots  <- c(
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
-  )
-  
-  openPDFEPS(paste0("PromptSensitivity_LLAMA_Oldy_Selection"),width=18,height=10)
-  grid.arrange(allPlots[[6]],allPlots[[11]],allPlots[[1]],
-               allPlots[[7]],allPlots[[12]],allPlots[[2]],
-               allPlots[[9]],allPlots[[14]],allPlots[[4]],
-               allPlots[[10]],allPlots[[15]],allPlots[[5]],
-               allPlots[[8]],allPlots[[13]],allPlots[[3]],
-               ncol = 3)
-  dev.off()  
-  
-  # All
-  allPlots  <- c(
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
-    plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
-  )
-  
-  openPDFEPS(paste0("PromptSensitivity_LLAMA_Oldy_All"),width=18,height=22)
-  grid.arrange(
-    
-    allPlots[[6]],
-    allPlots[[7]],
-    allPlots[[9]],
-    allPlots[[10]],
-    allPlots[[8]],
-    
-    allPlots[[11]],
-    allPlots[[12]],
-    allPlots[[14]],
-    allPlots[[15]],
-    allPlots[[13]],
-    
-    allPlots[[1]],
-    allPlots[[2]],
-    allPlots[[4]],
-    allPlots[[5]],
-    allPlots[[3]],
-    ncol = 1)
-  dev.off()  
-  
+titles <- c("addition", "anagram", "transforms", "locality", "science")
 
-# ----- BLOOM -----
+# GPTselModels <- c("GPT-3 Davinci", "text-davinci-003", "GPT-4 v2")
+GPTselModels <- c("GPT-3 Ada","GPT-3 Davinci", "text-davinci-003", "GPT-3.5-turbo", "GPT-4 v2")
+
+# LlamaselModels <- c("LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-70b-chat")
+LlamaselModels <- c("LLaMA-7b","LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-13b-chat", "LLaMA-2-70b-chat")
+
+
+# GPT --------------------- --------------------- --------------------- ---------------------
+
+# Selection
+allPlots  <- c(
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPTselModels, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
+)
+
+# Selection (correct, avoidant, incorrect)
+openPDFEPS(paste0("PromptSensitivity_GPT_Oldy_Selection_v2"),width=18,height=10)
+grid.arrange(allPlots[[6]],allPlots[[11]],allPlots[[1]],
+             allPlots[[7]],allPlots[[12]],allPlots[[2]],
+             allPlots[[9]],allPlots[[14]],allPlots[[4]],
+             allPlots[[10]],allPlots[[15]],allPlots[[5]],
+             allPlots[[8]],allPlots[[13]],allPlots[[3]],
+             ncol = 3)
+dev.off()  
+
+# Selection  (correct, avoidant)
+openPDFEPS(paste0("PromptSensitivity_GPT_Oldy_Selection_v2a"),width=16,height=12)
+grid.arrange(allPlots[[6]],allPlots[[11]],
+             allPlots[[7]],allPlots[[12]],
+             allPlots[[9]],allPlots[[14]],
+             allPlots[[10]],allPlots[[15]],
+             allPlots[[8]],allPlots[[13]],
+             ncol = 2)
+dev.off() 
+
 
 # All
 allPlots  <- c(
-  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
-  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
-  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
+  plotPrompts(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, selModels = GPT.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
 )
 
-openPDFEPS(paste0("PromptSensitivity_BLOOM_Oldy_All"),width=18,height=22)
+openPDFEPS(paste0("PromptSensitivity_GPT_Oldy_All_v2"),width=18,height=22)
+# do.call("grid.arrange", c(allPlots, ncol=3))
+
+grid.arrange(
+             
+             allPlots[[6]],
+             allPlots[[7]],
+             allPlots[[9]],
+             allPlots[[10]],
+             allPlots[[8]],
+             
+             allPlots[[11]],
+             allPlots[[12]],
+             allPlots[[14]],
+             allPlots[[15]],
+             allPlots[[13]],
+             
+             allPlots[[1]],
+             allPlots[[2]],
+             allPlots[[4]],
+             allPlots[[5]],
+             allPlots[[3]],
+             ncol = 1)
+dev.off()  
+
+
+
+
+
+# LLAMA --------------------- --------------------- --------------------- ---------------------
+
+# Selection
+allPlots  <- c(
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LlamaselModels, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
+)
+
+# Selection (correct, avoidant, incorrect)
+openPDFEPS(paste0("PromptSensitivity_LLAMA_Oldy_Selection_v2"),width=18,height=10)
+grid.arrange(allPlots[[6]],allPlots[[11]],allPlots[[1]],
+             allPlots[[7]],allPlots[[12]],allPlots[[2]],
+             allPlots[[9]],allPlots[[14]],allPlots[[4]],
+             allPlots[[10]],allPlots[[15]],allPlots[[5]],
+             allPlots[[8]],allPlots[[13]],allPlots[[3]],
+             ncol = 3)
+dev.off()  
+
+# Selection  (correct, avoidant)
+openPDFEPS(paste0("PromptSensitivity_LLAMA_Oldy_Selection_v2a"),width=16,height=12)
+grid.arrange(allPlots[[6]],allPlots[[11]],
+             allPlots[[7]],allPlots[[12]],
+             allPlots[[9]],allPlots[[14]],
+             allPlots[[10]],allPlots[[15]],
+             allPlots[[8]],allPlots[[13]],
+             ncol = 2)
+dev.off() 
+
+# All
+allPlots  <- c(
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
+  plotPrompts(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, selModels = LLAMA.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
+)
+
+openPDFEPS(paste0("PromptSensitivity_LLAMA_Oldy_All_v2"),width=18,height=22)
 # do.call("grid.arrange", c(allPlots, ncol=3))
 
 grid.arrange(
@@ -545,17 +615,337 @@ grid.arrange(
   ncol = 1)
 dev.off()  
 
+
+
+
+# BLOOM --------------------- --------------------- --------------------- ---------------------
+
+
+# All
+allPlots  <- c(
+  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#e63946", outcome2show = "INCORRECT", titles = titles),
+  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#1d3557", outcome2show = "CORRECT", titles = titles),
+  plotPrompts(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, selModels = BLOOM.engines, colours = c("#006d77","#e29578"), ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", titles = titles)
+)
+
+openPDFEPS(paste0("PromptSensitivity_BLOOM_Oldy_All_v2"),width=18,height=22)
+# do.call("grid.arrange", c(allPlots, ncol=3))
+
+grid.arrange(
+  
+  allPlots[[6]],
+  allPlots[[7]],
+  allPlots[[9]],
+  allPlots[[10]],
+  allPlots[[8]],
+  
+  allPlots[[11]],
+  allPlots[[12]],
+  allPlots[[14]],
+  allPlots[[15]],
+  allPlots[[13]],
+  
+  allPlots[[1]],
+  allPlots[[2]],
+  allPlots[[4]],
+  allPlots[[5]],
+  allPlots[[3]],
+  ncol = 1)
+dev.off()  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Files (diff ranked) + colour -------------------------------------------------------------------
+
+group.colours.GPT = c("#ffff3f", "#ffc300", "#ffa200", "#ff8800", "#cae9ff", "#89c2d9", "#468faf", "#2a6f97", "#014f86", "#012a4a")
+group.colours.LLAMA = c("#ffff3f","#ffdd00", "#ffc300", "#ffb700", "#ffa200", "#ff8800", "#ff7b00", "#cae9ff", "#62b6cb", "#1b4965")
+group.colours.BLOOM = c("#ffdd00", "#ffc300", "#ffb700", "#ffa200", "#ff8800", "#ff7b00", "#a9d6e5","#89c2d9","#468faf","#2a6f97", "#01497c", "#012a4a")
+
+GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
+LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
+BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
+
+GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
+LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
+BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
+
+diff2use <- c("diff1", "letters", "diff", "diff", "city_frequency", "diff")
+
+# files = LLAMA.bins; folder = "InstanceResults/LLAMA/"; diffs = diff2use; engines <- LLAMA.engines; outcome2show = "INCORRECT"; byPrompt = F; colours = group.colours.LLAMA, ColourTitle = "#e63946"
+
+titles <- c("addition", "anagram", "transforms", "locality", "science")
+
+
+
+plotPrompts2 <- function(files = c(),
+                         folder = "./",
+                         diffs = c(),
+                         engines = c(),
+                         colours = c(),
+                         # cuts = c(15,20,15),
+                         # tlog = c(F,F,T),
+                         ColourTitle = "black",
+                         outcome2show = "INCORRECT",
+                         byPrompt = TRUE,
+                         combined = FALSE){
+  
+  listPlots <- list()
+  
+  for(i in 1:length(files)){
+    print(paste("------------", files[i]))
+    
+    data <- read.csv(paste0(folder, files[i]))
+    
+ 
+    
+    xRange <- range(data$diffLog)
+    # if(files[i] == "ScienceQA_results_lm_bins.csv"){
+    #   xRange[1] <- xRange[1] * 1.333
+    #   xRange[2] <- xRange[2] * 1.333
+    # } 
+    xRange[2] <- ifelse(xRange[2]>100,100,xRange[2])
+    # seqxRange <- round(seq(from = xRange[1], to = xRange[2], length.out = 4))
+    
+    
+    data[data$outcome=="AVOIDANCE", "outcome"] = "AVOIDANT"
+    print(paste("------------", i))
+    data.summ <- data %>% group_by(engine, template_id, difficulty_bin, outcome) %>% summarise(n = n(), .groups = "drop") %>% 
+      complete(engine, template_id, difficulty_bin, outcome, fill = list(n=0)) %>% 
+      group_by(engine, template_id, difficulty_bin) %>% mutate(freqOutcome = n / (sum(n)+0.00000001))
+    
+    data.summ$engine <- factor(data.summ$engine, levels = engines)
+    
+    # Better - Worst
+    if(byPrompt){
+      data.summ.avgEachPrompt <-  data.summ %>% group_by(engine, template_id, outcome) %>% summarise(avgFreq = mean(freqOutcome))
+      maxSlice <- data.summ.avgEachPrompt %>% group_by(engine, outcome) %>% slice(which.max(avgFreq)) # Which is the template with MAX freqOutcome for AVOIDANT, CORRECT, INCORRECT
+      minSlice <- data.summ.avgEachPrompt %>% group_by(engine, outcome) %>% slice(which.min(avgFreq)) # Which is the template with MIN freqOutcome for AVOIDANT, CORRECT, INCORRECT
+      
+      maxSlice.data <- merge(data.summ, maxSlice, by = c("engine", "template_id", "outcome"))  
+      minSlice.data <- merge(data.summ, minSlice, by = c("engine", "template_id", "outcome"))  
+      
+      merged_data <- merge(maxSlice.data, minSlice.data, by = c("engine", "outcome", "difficulty_bin"))
+      merged_data$freqOutcome <-  merged_data$freqOutcome.x - merged_data$freqOutcome.y
+      merged_data$template_id <-  0
+      
+    }else{
+      merged_data <- data.summ %>% group_by(engine, difficulty_bin, outcome) %>% 
+        summarise(maxFreqOutcome = max(freqOutcome,na.rm = T), minFreqOutcome = min(freqOutcome,na.rm = T)) %>% 
+        mutate(freqOutcome = maxFreqOutcome - minFreqOutcome)
+      merged_data$template_id <-  0
+      
+    }
+    
+    
+    listPlots[[i]] <- ggplot(data = filter(merged_data, outcome == outcome2show), aes(difficulty_bin, freqOutcome)) +
+      #geom_line(data = filter(merged_data, outcome == outcome2show), aes(difficulty_bin, freqOutcome, colour = engine), size = 1) +
+      geom_line(aes(colour = engine, group = engine, label = engine), lty = 2, hjust = 1, linewidth = 1, alpha = 0.2, show.legend = F) +
+      
+      geom_textsmooth(aes(colour = engine, group = engine, label = engine), method = "loess", span = 1.5, show.legend = F,
+                      linewidth = 1, 
+                      alpha = 1,
+                      fontface = "bold",
+                      hjust = 0.7
+      ) + 
+  
+      scale_colour_manual(values = colours) +
+      # scale_x_continuous(labels = seqxRange)  +
+      scale_x_continuous(breaks = c(1,30), labels = round(xRange))  +
+      
+      scale_y_continuous(limits=c(0, 1))   +   
+      
+      xlab("Difficulty") + ylab("") + 
+      # labs(title = stringr::str_split(files[i],"_")[[1]][1],
+           # subtitle = outcome2show) +
+      
+      # labs(title = paste0("<strong><span style='color:black; font-size:20pt;'>",tools::toTitleCase(stringr::str_split(files[i],"_")[[1]][1]),"</span></strong> - <span style='color:",ColourTitle,"; font-size:16pt;'>",outcome2show,"</span>")) +
+      labs(title = paste0("<strong><span style='color:black; font-size:20pt;'>",titles[i],"</span></strong> - <span style='color:",ColourTitle,"; font-size:16pt;'>",outcome2show,"</span>")) +
+      # labs(title = titles[i]) +
+      
+      theme_minimal() +
+      theme(plot.title = element_markdown()) +
+      theme(strip.text = element_text(face = "bold")) + 
+      theme(
+        legend.position = "none",
+        axis.title = element_text(color = "black", size = 20),
+        axis.text = element_text(color = "black", size = 20))
+        # plot.title = element_text(color = "black", size = 20, face = "bold"),
+        # plot.subtitle = element_text(color = ColourTitle, size = 16))
+  
+  }
+  
+  return(listPlots)
 }
 
 
+
+get_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+
+lay = rbind(c(1,2,3),c(4,5,6),c(7,8,9),c(10,11,12),c(13,14,15),c(16,16,16))
+
+# GPT --------------------- --------------------- --------------------- ---------------------
+
+allPlots  <- c(
+  plotPrompts2(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, colours = group.colours.GPT, ColourTitle = "#e63946", outcome2show = "INCORRECT", byPrompt = F),
+  plotPrompts2(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, colours = group.colours.GPT, ColourTitle = "#1d3557", outcome2show = "CORRECT", byPrompt = F),
+  plotPrompts2(files = GPT.bins, folder = "InstanceResults/GPT/", diffs = diff2use, engines = GPT.engines, colours = group.colours.GPT, ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", byPrompt = F))
+
+pWlegend <- allPlots[[1]] + 
+  geom_line(aes(colour = engine, group = engine, label = engine), linewidth = 4) +
+  
+  guides(color = guide_legend(nrow = 1, byrow = T))  +
+  theme( legend.position = "bottom",
+  # legend.key.size = unit(1.5, "cm"), # Increase the size of the legend keys
+  legend.title = element_text(size = 0), # Increase the size of the legend title
+  legend.text = element_text(size = 14) # Increase the size of the legend text (item names)
+)
+
+legend <- get_legend(pWlegend)
+
+openPDFEPS(paste0("PromptSensitivity_GPT_ALL_horizontal_B"),width=26,height=16)
+
+# #  vertical
+# grid.arrange(allPlots[[1]],allPlots[[6]],allPlots[[11]],
+#              allPlots[[2]],allPlots[[7]],allPlots[[12]],
+#              allPlots[[4]],allPlots[[9]],allPlots[[14]],
+#              allPlots[[5]],allPlots[[10]],allPlots[[15]],
+#              allPlots[[3]],allPlots[[8]],allPlots[[13]],
+#              
+#             legend, layout_matrix = lay)
+
+#  horizontal
+
+lay = rbind(c(1,2,3,4,5),c(6,7,8,9,10),c(11,12,13,14,15),c(16,16,16,16,16))
+grid.arrange(
+             allPlots[[6]],allPlots[[7]],allPlots[[9]],allPlots[[10]],allPlots[[8]],  #correct
+             allPlots[[11]],allPlots[[12]],allPlots[[14]],allPlots[[15]],allPlots[[13]], #avoidance
+             allPlots[[1]],allPlots[[2]],allPlots[[4]],allPlots[[5]],allPlots[[3]], #incorrect
+             
+             legend, layout_matrix = lay)
+
+dev.off()  
+
+
+
+
+# LLAMA --------------------- --------------------- --------------------- ---------------------
+
+allPlots  <- c(
+  plotPrompts2(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, colours = group.colours.LLAMA, ColourTitle = "#e63946", outcome2show = "INCORRECT", byPrompt = F),
+  plotPrompts2(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, colours = group.colours.LLAMA, ColourTitle = "#1d3557", outcome2show = "CORRECT", byPrompt = F),
+  plotPrompts2(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", diffs = diff2use, engines = LLAMA.engines, colours = group.colours.LLAMA, ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", byPrompt = F))
+
+pWlegend <- allPlots[[1]] + 
+  geom_line(aes(colour = engine, group = engine, label = engine), linewidth = 4) +
+  
+  guides(color = guide_legend(nrow = 1, byrow = T))  +
+  theme( legend.position = "bottom",
+         # legend.key.size = unit(1.5, "cm"), # Increase the size of the legend keys
+         legend.title = element_text(size = 0), # Increase the size of the legend title
+         legend.text = element_text(size = 14) # Increase the size of the legend text (item names)
+  )
+
+legend <- get_legend(pWlegend)
+
+openPDFEPS(paste0("PromptSensitivity_LLAMA_ALL_horizontal_B"),width=26,height=16)
+# #  vertical
+# grid.arrange(allPlots[[1]],allPlots[[6]],allPlots[[11]],
+#              allPlots[[2]],allPlots[[7]],allPlots[[12]],
+#              allPlots[[4]],allPlots[[9]],allPlots[[14]],
+#              allPlots[[5]],allPlots[[10]],allPlots[[15]],
+#              allPlots[[3]],allPlots[[8]],allPlots[[13]],
+#              
+#             legend, layout_matrix = lay)
+
+#  horizontal
+
+lay = rbind(c(1,2,3,4,5),c(6,7,8,9,10),c(11,12,13,14,15),c(16,16,16,16,16))
+grid.arrange(
+  allPlots[[6]],allPlots[[7]],allPlots[[9]],allPlots[[10]],allPlots[[8]],  #correct
+  allPlots[[11]],allPlots[[12]],allPlots[[14]],allPlots[[15]],allPlots[[13]], #avoidance
+  allPlots[[1]],allPlots[[2]],allPlots[[4]],allPlots[[5]],allPlots[[3]], #incorrect
+  
+  legend, layout_matrix = lay)
+
+dev.off()  
+
+
+# BLOOM --------------------- --------------------- --------------------- ---------------------
+
+allPlots  <- c(
+  plotPrompts2(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, colours = group.colours.BLOOM, ColourTitle = "#e63946", outcome2show = "INCORRECT", byPrompt = F),
+  plotPrompts2(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, colours = group.colours.BLOOM, ColourTitle = "#1d3557", outcome2show = "CORRECT", byPrompt = F),
+  plotPrompts2(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", diffs = diff2use, engines = BLOOM.engines, colours = group.colours.BLOOM, ColourTitle = "#a8dadc", outcome2show = "AVOIDANT", byPrompt = F))
+
+pWlegend <- allPlots[[1]] + 
+  geom_line(aes(colour = engine, group = engine, label = engine), linewidth = 4) +
+  
+  guides(color = guide_legend(nrow = 1, byrow = T))  +
+  theme( legend.position = "bottom",
+         # legend.key.size = unit(1.5, "cm"), # Increase the size of the legend keys
+         legend.title = element_text(size = 0), # Increase the size of the legend title
+         legend.text = element_text(size = 14) # Increase the size of the legend text (item names)
+  )
+
+legend <- get_legend(pWlegend)
+
+openPDFEPS(paste0("PromptSensitivity_BLOOM_ALL_horizontal_B"),width=26,height=16)
+# #  vertical
+# grid.arrange(allPlots[[1]],allPlots[[6]],allPlots[[11]],
+#              allPlots[[2]],allPlots[[7]],allPlots[[12]],
+#              allPlots[[4]],allPlots[[9]],allPlots[[14]],
+#              allPlots[[5]],allPlots[[10]],allPlots[[15]],
+#              allPlots[[3]],allPlots[[8]],allPlots[[13]],
+#              
+#             legend, layout_matrix = lay)
+
+#  horizontal
+
+lay = rbind(c(1,2,3,4,5),c(6,7,8,9,10),c(11,12,13,14,15),c(16,16,16,16,16))
+grid.arrange(
+  allPlots[[6]],allPlots[[7]],allPlots[[9]],allPlots[[10]],allPlots[[8]],  #correct
+  allPlots[[11]],allPlots[[12]],allPlots[[14]],allPlots[[15]],allPlots[[13]], #avoidance
+  allPlots[[1]],allPlots[[2]],allPlots[[4]],allPlots[[5]],allPlots[[3]], #incorrect
+  
+  legend, layout_matrix = lay)
+
+dev.off()  
+
+
+
+
+
+
 # ------------------------------------------------------------------------------------------------
-# Ploting Performance ----------------------------------------------------------------------------
+# Perfomance Plots -------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------
 
 GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
 LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
 BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
 
+# [1] "addition_results_lm_bins.csv"         "anagram_results_lm_bins.csv"          "CommonTransforms_results_lm_bins.csv" "locality_results_lm_bins.csv"         "ScienceQA_results_lm_bins.csv"       
 titles <- c("addition", "anagram", "transforms", "locality", "science")
 
 plotPerformance <- function(files = c(), folder = "./", engines = C()){
@@ -568,6 +958,15 @@ plotPerformance <- function(files = c(), folder = "./", engines = C()){
     data <- read.csv(paste0(folder,files[i]))
     xRange <- c(round(range(data$diffLog)[1],1), round(median(data$diffLog),1), round(range(data$diffLog)[2],1))
 
+    data <- filter(data, engine %in% engines)
+    
+    # if(files[i] == "ScienceQA_results_lm_bins.csv"){
+    #   xRange[1] <- xRange[1] * 1.333
+    #   xRange[2] <- xRange[2] * 1.333
+    # }
+    # xRange[2] <- ifelse(xRange[2]>100,100,xRange[2])
+    # seqxRange <- round(seq(from = xRange[1], to = xRange[2], length.out = 4))
+    
     data.summ <- data %>% group_by(engine, template_id, difficulty_bin, outcome) %>% summarise(n = n()) %>% 
       mutate(freqOutcome = n / sum(n))
     
@@ -618,6 +1017,8 @@ plotPerformance <- function(files = c(), folder = "./", engines = C()){
       colnames(chance.s)[4] <- "freqOutcome" 
     }
     
+    
+    
     listPlots[[i]] <- ggplot(data.summ, aes(difficulty_bin, freqOutcome, colour = outcome, fill = outcome)) + 
       geom_col(position = "fill") +
       facet_wrap(~engine, nrow = 1) + 
@@ -632,7 +1033,9 @@ plotPerformance <- function(files = c(), folder = "./", engines = C()){
     if (files[i] == "ScienceQA_results_log_bins.csv"){
       listPlots[[i]] <-  listPlots[[i]]  + geom_col(data = dplyr::filter(chance.s, outcome == "CHANCE"), aes(difficulty_bin, freqOutcome), colour = NA, alpha = 0.6, ) + guides(colour = "none")
     }
-
+      
+      # labs(title = stringr::str_split(files[i],"_")[[1]][1]) +
+      # labs(title = titles[i]) +
     listPlots[[i]] <- listPlots[[i]]  + theme_minimal() +
       theme(strip.text = element_text(face = "bold")) + 
       theme(
@@ -640,7 +1043,11 @@ plotPerformance <- function(files = c(), folder = "./", engines = C()){
         plot.subtitle = element_text(color = "black", size = 6))  +
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
             axis.text.x = element_text(angle = 0, size = 7.5)) #vjust = 1, hjust=1, size = 5.5))
-
+    # theme(legend.position = c(0.05,0.8))  +
+    # theme(legend.text = element_text(size = 6))
+    
+    
+    
     if(i==1){
       listPlots[[i]] <- listPlots[[i]]  + 
         theme(
@@ -671,41 +1078,73 @@ plotPerformance <- function(files = c(), folder = "./", engines = C()){
 }
 
 
-if (FALSE) { # Plots generation 
 
-  GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
-  LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
-  BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
-  
-  GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
-  LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
-  BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
-  
-  # ---- GPT ---- 
-  allPer <- c(plotPerformance(files = GPT.bins, folder = "InstanceResults/GPT/", engines = GPT.engines))
-  
-  openPDFEPS(paste0("Perfomance_area_GPT_5benchs"),width=14,height=8)
-  grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
-  dev.off()
-  
-  
-  # ---- LLAMA ---- 
-  allPer <- c(plotPerformance(LLAMA.bins, "InstanceResults/LLAMA/", engines = LLAMA.engines))
-  
-  openPDFEPS(paste0("Perfomance_area_LLAMA_5benchs"),width=14,height=8)
-  grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
-  dev.off()
-  
-  
-  # ---- BLOOM ---- 
-  allPer <- c(plotPerformance(BLOOM.bins, "InstanceResults/BLOOM/", engines = BLOOM.engines))
-  
-  openPDFEPS(paste0("Perfomance_area_BLOOM_5benchs"),width=14,height=8)
-  grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
-  dev.off()
-  
+GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
+LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
+BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
 
-}
+GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
+LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
+BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
+
+
+
+# GPT 
+allPer <- c(plotPerformance(files = GPT.bins, folder = "InstanceResults/GPT/", engines = GPT.engines))
+          
+openPDFEPS(paste0("Perfomance_area_GPT_5benchs_v2"),width=14,height=8)
+grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(GPT.bins, "InstanceResults/GPT/", engines = GPT.engines), ncol=1))
+dev.off()
+
+# -- GPT selection
+
+GPTselModels <- c("GPT-3 Ada","GPT-3 Davinci", "text-davinci-003", "GPT-3.5-turbo", "GPT-4 v2")
+allPerGS <- c(plotPerformance(files = GPT.bins, folder = "InstanceResults/GPT/", engines = GPTselModels))
+
+openPDFEPS(paste0("Perfomance_area_GPT_5benchs_SELECTION_v2"),width=8,height=11)
+grid.arrange(allPerGS[[1]],allPerGS[[2]],allPerGS[[4]],allPerGS[[5]],allPerGS[[3]], ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(GPT.bins, "InstanceResults/GPT/", engines = GPT.engines), ncol=1))
+dev.off()
+
+
+#  LLAMA
+allPer <- c(plotPerformance(LLAMA.bins, "InstanceResults/LLAMA/", engines = LLAMA.engines))
+
+openPDFEPS(paste0("Perfomance_area_LLAMA_5benchs_v2"),width=14,height=8)
+grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(LLAMA.bins, "InstanceResults/LLAMA/", engines = LLAMA.engines), ncol=1))
+dev.off()
+
+
+# -- LLama selection
+
+LlamaselModels <- c("LLaMA-7b","LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-13b-chat", "LLaMA-2-70b-chat")
+allPerLS <- c(plotPerformance(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", engines = LlamaselModels))
+
+openPDFEPS(paste0("Perfomance_area_LLAMA_5benchs_SELECTION_v2"),width=8,height=11)
+grid.arrange(allPerLS[[1]],allPerLS[[2]],allPerLS[[4]],allPerLS[[5]],allPerLS[[3]], ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(GPT.bins, "InstanceResults/GPT/", engines = GPT.engines), ncol=1))
+dev.off()
+
+
+# LlamaselModels <- c("LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-70b-chat")
+
+
+
+# BLOOM
+allPer <- c(plotPerformance(BLOOM.bins, "InstanceResults/BLOOM/", engines = BLOOM.engines))
+
+openPDFEPS(paste0("Perfomance_area_BLOOM_5benchs_v2"),width=14,height=8)
+grid.arrange(allPer[[1]],allPer[[2]],allPer[[4]],allPer[[5]],allPer[[3]], ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(BLOOM.bins, "InstanceResults/BLOOM/", engines = BLOOM.engines), ncol=1))
+dev.off()
+
+
+
+
+
+
 
 
 # ------------------------------------------------------------------------------------------------
@@ -713,15 +1152,22 @@ if (FALSE) { # Plots generation
 # ------------------------------------------------------------------------------------------------
 
 
-# ---- GPT ---- 
+######################## GPT
 
 rd <- read.csv("./ReliabilityResults/reliability_measures_GPT.csv")
-colnames(rd) <- c("group", "Correctness Proportion", "Error-Free Proportion", 
+head(rd)
+colnames(rd)
+# colnames(rd) <- c("group", "Prompt Robustness", "Correctness", "Infallibility", "Avoidance", "Difficulty Concordance", "Incorrect" )
+  colnames(rd) <- c("group", "Correctness Proportion", "Error-Free Proportion", 
                   "Difficulty Concordance (Correctness)", 
                   "Difficulty Concordance (Error-freeness)", 
                   "Prompt Robustness (Correctness)", 
                   "Prompt Robustness (Error-freeness)")
+  
+sapply(rd, class)
 
+# ggradar(rd[-ncol(rd)])
+# rd2 <- rd[,!(colnames(rd) %in% c("Avoidance", "Incorrect"))]
 rd2 <- select(rd, c("group", 
                     "Prompt Robustness (Correctness)",
                     "Correctness Proportion", 
@@ -736,8 +1182,16 @@ rd2$group <- factor(rd2$group, levels = engines)
 gr <- ggradar(
   rd2, 
   group.point.size = 4,
+  # values.radar = c("0", "25", "50", "75"),
+  # grid.min = 0, grid.mid = 10, grid.max = 20,
+  # Polygons
   group.line.width = 2, 
+  # group.point.size = 3,
+  # group.colours = c("#ec9a9a","#e96a70", "#e63946", "#d13440", "#457b9d", "#31587a", "#1d3557", "#b4e4da", "#44bba4", "#205a4e"),
   group.colours = c("#ffff3f", "#ffc300", "#ffa200", "#ff8800", "#cae9ff", "#89c2d9", "#468faf", "#2a6f97", "#014f86", "#012a4a"),
+  # # Background and grid 2c7da0
+  # background.circle.colour = "white",
+  # gridline.mid.colour = "grey",
   background.circle.transparency = 0.1,
   legend.position = "right",
   legend.text.size = 18,
@@ -750,16 +1204,59 @@ openPDFEPS(paste0("RadarChart.GPT"),width=22,height=10)
 gr
 dev.off()
 
-# ----- LLAMA -----
+ggplot_build(gr)
+
+# rd <- read.csv("reliability_measures.csv")
+# head(rd)
+# colnames(rd) <- c("group", "Prompt Robustness", "Correct", "Infallibility", "Avoidance", "Difficulty Concordance", "Incorrect" )
+# sapply(rd, class)
+# rd3 <- rd[,!(colnames(rd) %in% c("Prompt Robustness", "Infallibility", "Difficulty Concordance"))]
+# engines <- rd3$group
+# rd3$group <- factor(rd2$group, levels = engines)
+# rd3m <- reshape2::melt(rd3, id.vars = c("group")) 
+# rd3m$variable <- factor(as.character(rd3m$variable), levels = c("Incorrect", "Avoidance", "Correct"))
+# 
+# bc <- ggplot(rd3m, aes(group, value, fill=variable, label = round(value*100,1))) + 
+#   geom_col() + 
+#   geom_text(data = filter(rd3m, value > 0), position = position_stack(vjust = .5), color = "#FFFFFF", angle = 0, fontface = "bold") +
+#   scale_fill_manual("",  values = c("#e63946", "#a8dadc", "#1d3557")) +
+#   scale_y_continuous(
+#     labels = c(0,25,50,75,100)) +
+#   guides(fill = guide_legend(nrow = 1)) +
+#   xlab("") + ylab("%")+
+#   theme_minimal(base_size = 16) +
+#   theme(strip.text = element_text(face = "bold")) + 
+#   theme(
+#     legend.position="top",
+#     plot.title = element_text(color = "black", size = 10, face = "bold"),
+#     plot.subtitle = element_text(color = "black", size = 6),
+#     axis.text.x = element_text(angle = 45, hjust = 1)
+#   )
+# 
+# 
+# openPDFEPS(paste0("BarChart_CIA"),width=9,height=7)
+# bc
+# dev.off()
+
+
+
+
+######################## LLAMA
 
 rd <- read.csv("./ReliabilityResults/reliability_measures_LLAMA.csv")
 head(rd)
 colnames(rd)
+# colnames(rd) <- c("group", "Prompt Robustness", "Correctness", "Infallibility", "Avoidance", "Difficulty Concordance", "Incorrect" )
 colnames(rd) <- c("group", "Correctness Proportion", "Error-Free Proportion", 
                   "Difficulty Concordance (Correctness)", 
                   "Difficulty Concordance (Error-freeness)", 
                   "Prompt Robustness (Correctness)", 
                   "Prompt Robustness (Error-freeness)")
+
+sapply(rd, class)
+
+# ggradar(rd[-ncol(rd)])
+# rd2 <- rd[,!(colnames(rd) %in% c("Avoidance", "Incorrect"))]
 rd2 <- select(rd, c("group", 
                     "Prompt Robustness (Correctness)",
                     "Correctness Proportion", 
@@ -774,8 +1271,17 @@ rd2$group <- factor(rd2$group, levels = engines)
 gr2 <- ggradar(
   rd2, 
   group.point.size = 4,
+  # values.radar = c("0", "25", "50", "75"),
+  # grid.min = 0, grid.mid = 10, grid.max = 20,
+  # Polygons
   group.line.width = 2, 
+  # group.point.size = 3,
+  # group.colours = c("#ec9a9a","#e96a70", "#e63946", "#d13440", "#b4e4da", "#44bba4", "#00a3a0", "#098d92", "#117684", "#195f76"),
   group.colours = c("#ffff3f","#ffdd00", "#ffc300", "#ffb700", "#ffa200", "#ff8800", "#ff7b00", "#cae9ff", "#62b6cb", "#1b4965"),
+  
+  # # Background and grid lines
+  # background.circle.colour = "white",
+  # gridline.mid.colour = "grey",
   background.circle.transparency = 0.1,
   legend.position = "right",
   legend.text.size = 18,
@@ -783,22 +1289,29 @@ gr2 <- ggradar(
   
 )
 
+
 openPDFEPS(paste0("RadarChart.Llama"),width=22,height=10)
 gr2
 dev.off()
 
 
 
-# ----- BLOOM -----
+######################## BLOOM
 
 rd <- read.csv("./ReliabilityResults/reliability_measures_BLOOM.csv")
 head(rd)
 colnames(rd)
+# colnames(rd) <- c("group", "Prompt Robustness", "Correctness", "Infallibility", "Avoidance", "Difficulty Concordance", "Incorrect" )
 colnames(rd) <- c("group", "Correctness Proportion", "Error-Free Proportion", 
                   "Difficulty Concordance (Correctness)", 
                   "Difficulty Concordance (Error-freeness)", 
                   "Prompt Robustness (Correctness)", 
                   "Prompt Robustness (Error-freeness)")
+
+sapply(rd, class)
+
+# ggradar(rd[-ncol(rd)])
+# rd2 <- rd[,!(colnames(rd) %in% c("Avoidance", "Incorrect"))]
 rd2 <- select(rd, c("group", 
                     "Prompt Robustness (Correctness)",
                     "Correctness Proportion", 
@@ -813,8 +1326,17 @@ rd2$group <- factor(rd2$group, levels = engines)
 gr3 <- ggradar(
   rd2, 
   group.point.size = 4,
+  # values.radar = c("0", "25", "50", "75"),
+  # grid.min = 0, grid.mid = 10, grid.max = 20,
+  # Polygons
   group.line.width = 2, 
+  # group.point.size = 3,
+  # group.colours = c("#ec9a9a","#e96a70", "#e63946", "#d13440", "#9b384d", "#503653", "#b4e4da", "#44bba4", "#00a3a0", "#098d92", "#117684", "#195f76"),
   group.colours = c("#ffdd00", "#ffc300", "#ffb700", "#ffa200", "#ff8800", "#ff7b00", "#a9d6e5","#89c2d9","#468faf","#2a6f97", "#01497c", "#012a4a"),
+  
+  # # Background and grid lines
+  # background.circle.colour = "white",
+  # gridline.mid.colour = "grey",
   background.circle.transparency = 0.1,
   legend.position = "right",
   legend.text.size = 18,
@@ -828,10 +1350,49 @@ gr3
 dev.off()
 
 
-openPDFEPS(paste0("RadarChart.All__"),width=62,height=10)
+
+openPDFEPS(paste0("RadarChart.All_June"),width=62,height=10)
 gridExtra::grid.arrange(gr, gr2, gr3, ncol= 3)
 dev.off()
 
+
+
+
+# ------------------------------------------------------------------------------------------------
+# Table Radar   ----------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+
+rd <- read.csv("./ReliabilityResults/reliability_measures_GPT.csv")
+rd <- read.csv("./ReliabilityResults/reliability_measures_BLOOM.csv")
+rd <- read.csv("./ReliabilityResults/reliability_measures_LLAMA.csv")
+
+
+head(rd)
+
+colnames(rd) <- c("Model", "Correctness Proportion", "Error-Free Proportion", 
+                  "Difficulty Concordance (Correctness)", 
+                  "Difficulty Concordance (Error-freeness)", 
+                  "Prompt Robustness (Correctness)", 
+                  "Prompt Robustness (Error-freeness)")
+
+sapply(rd, class)
+
+# ggradar(rd[-ncol(rd)])
+# rd2 <- rd[,!(colnames(rd) %in% c("Avoidance", "Incorrect"))]
+rd2 <- select(rd, c("Model", 
+                    "Correctness Proportion", 
+                    "Difficulty Concordance (Correctness)",
+                    "Prompt Robustness (Correctness)",
+                    "Error-Free Proportion", 
+                    "Difficulty Concordance (Error-freeness)",
+                    "Prompt Robustness (Error-freeness)"))
+
+rd2 <- rd2 %>%
+  mutate_if(is.numeric, ~ . * 100)
+
+latex_table <- xtable::xtable(rd2)
+
+print(latex_table, include.rownames = FALSE, floating = FALSE)
 
 # ------------------------------------------------------------------------------------------------
 # Scaling Plots ----------------------------------------------------------------------------------
@@ -897,6 +1458,7 @@ av <- ggplot(sk, aes(logParams, Avoidance)) +
 
 
 #Incorrectness
+
 inc <- ggplot(sk, aes(logParams, Incorrectness)) +
   geom_smooth(aes(logParams, Incorrectness, colour = Type), se = FALSE, method = "lm") + 
   geom_point(aes(colour = Type, shape = Family), size = 8, alpha = 1) + 
@@ -922,7 +1484,16 @@ inc <- ggplot(sk, aes(logParams, Incorrectness)) +
     axis.text = element_text(color = "black", size = 14))
 
 
-# avoidance / (avoidance + incorrectness)
+
+
+
+#avoidance / (avoidance + incorrectness)
+
+
+#  how cautiously the model behaves in situations where it could potentially make an error; 
+# a higher value suggests the model prefers avoiding answers over risking incorrect responses when it is unsure. 
+# This could be particularly relevant in applications where the cost of making an incorrect prediction is high, 
+# and cautious behavior (avoidance) is preferred over the risk of error.
 
 sk$caut = sk$Avoidance / (sk$Avoidance + sk$Incorrectness)
 
@@ -950,7 +1521,14 @@ caut <- ggplot(sk, aes(logParams, caut)) +
     axis.text = element_text(color = "black", size = 14))
 
 
-# Reckless
+
+
+
+# openPDFEPS(paste0("Scaling"),width=28,height=7)
+
+
+#  The expression \(\frac{i}{a+i}\) represents the ratio of incorrect outcomes to the sum of avoidance and incorrect 
+# outcomes. In one word, this can be seen as the "Error Rate" among non-correct responses, indicating how often the system errs when it does not provide a correct answer.
 
 sk$reck = sk$Incorrectness / (sk$Avoidance + sk$Incorrectness)
 
@@ -980,8 +1558,13 @@ reck <- ggplot(sk, aes(logParams, reck)) +
 
 
 openPDFEPS(paste0("Scaling"),width=18,height=9)
+# openPDFEPS(paste0("Scaling"),width=20,height=12)
+# gridExtra::grid.arrange(av, inc, reck, ncol= 3)
 gridExtra::grid.arrange(av, inc, reck, layout_matrix = rbind(c(1,1,3,3,3),c(1,1,3,3,3),c(2,2,3,3,3),c(2,2,3,3,3)))
+
 dev.off()
+
+
 
 
 
@@ -1041,6 +1624,8 @@ dev.off()
 
 
 
+
+
 # ------------------------------------------------------------------------------------------------
 # Prompt Performance Plots -----------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------
@@ -1049,6 +1634,7 @@ GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
 LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
 BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
 
+# [1] "addition_results_lm_bins.csv"         "anagram_results_lm_bins.csv"          "CommonTransforms_results_lm_bins.csv" "locality_results_lm_bins.csv"         "ScienceQA_results_lm_bins.csv"       
 titles <- c("addition", "anagram", "transforms", "locality", "science")
 files = GPT.bins
 folder = "InstanceResults/GPT/"
@@ -1075,6 +1661,8 @@ plotPromptPerformance <- function(files = c(), folder = "./", engines = C(), sel
     data.summ$engine <- factor(data.summ$engine, levels = engines)
     data.summ$outcome <- factor(data.summ$outcome, 
                                 levels = c("INCORRECT", "AVOIDANCE", "CORRECT"))
+    
+    # head(data.summ) 
     
     
     if (files[i] == "ScienceQA_results_log_bins.csv"){
@@ -1113,6 +1701,7 @@ plotPromptPerformance <- function(files = c(), folder = "./", engines = C(), sel
       
       chance.s <- chance 
       
+      # colnames(chance.s)[5] <- "freqOutcome" 
     }
     
     listPlots[[i]] <- ggplot(filter(data.summ, engine %in% selModels), aes(template_id, freqOutcome, fill = outcome)) + 
@@ -1129,7 +1718,9 @@ plotPromptPerformance <- function(files = c(), folder = "./", engines = C(), sel
     if (files[i] == "ScienceQA_results_log_bins.csv"){
       listPlots[[i]] <-  listPlots[[i]]  + geom_col(data = dplyr::filter(chance.s, outcome == "CHANCE", engine %in% selModels), aes(template_id, freqOutcome), colour = NA, alpha = 0.6, ) + guides(colour = "none")
     }
- 
+    
+    # labs(title = stringr::str_split(files[i],"_")[[1]][1]) +
+    # labs(title = titles[i]) +
     listPlots[[i]] <- listPlots[[i]]  + 
       xlab("") +
       theme_minimal() +
@@ -1141,7 +1732,11 @@ plotPromptPerformance <- function(files = c(), folder = "./", engines = C(), sel
             axis.text.x = element_text(angle = 0, size = 7.5),
             plot.margin=unit(c(-0.1,0,0,0), "cm"),
             axis.title.x = element_blank()
-      ) 
+      ) #vjust = 1, hjust=1, size = 5.5))
+    # theme(legend.position = c(0.05,0.8))  +
+    # theme(legend.text = element_text(size = 6))
+    
+    
     
     if(i==1){
       listPlots[[i]] <- listPlots[[i]]  + 
@@ -1167,48 +1762,51 @@ plotPromptPerformance <- function(files = c(), folder = "./", engines = C(), sel
       listPlots[[i]] <- listPlots[[i]]  + xlab("") + ylab(titles[i]) + theme(axis.title.y = element_text(face="bold"))
     }
     
+    # listPlots[[i]]   <- listPlots[[i]] + theme(plot.margin=unit(c(-0.15,0.1,0,0), "cm"))
   }
   
   return(listPlots)
 }
 
 
-if(FALSE){ # Plot generation
-  
-  GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
-  LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
-  BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
-  
-  GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
-  LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
-  BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
-  
-  
-  GPTselModels <- c("GPT-3 Davinci", "text-davinci-003", "GPT-4 v2")
-  LlamaselModels <- c("LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-70b-chat")
-  
-  
-  # GPT 
-  allPlotPromptsGPT <- plotPromptPerformance(files = GPT.bins, folder = "InstanceResults/GPT/", engines = GPT.engines, selModels = GPT.engines)
-  allPlotPromptsLLAMA <- plotPromptPerformance(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", engines = LLAMA.engines, selModels = LLAMA.engines)
-  allPlotPromptsBLOOM <- plotPromptPerformance(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", engines = BLOOM.engines, selModels = BLOOM.engines)
-  
-  
-  openPDFEPS(paste0("Perfomance_area_by_Propmt_ALL"),width=16,height=22)
-  grid.arrange(
-    allPlotPromptsGPT[[1]],allPlotPromptsGPT[[2]],allPlotPromptsGPT[[4]],allPlotPromptsGPT[[5]],allPlotPromptsGPT[[3]], 
-    allPlotPromptsLLAMA[[1]],allPlotPromptsLLAMA[[2]],allPlotPromptsLLAMA[[4]],allPlotPromptsLLAMA[[5]],allPlotPromptsLLAMA[[3]], 
-    allPlotPromptsBLOOM[[1]],allPlotPromptsBLOOM[[2]],allPlotPromptsBLOOM[[4]],allPlotPromptsBLOOM[[5]],allPlotPromptsBLOOM[[3]], 
-    ncol = 1)
-  # do.call("grid.arrange", c(plotPerformance(GPT.bins, "InstanceResults/GPT/", engines = GPT.engines), ncol=1))
-  dev.off()
-  
-}
+
+GPT.bins = list.files(path = "InstanceResults/GPT", pattern = "*log_bins.csv")
+LLAMA.bins = list.files(path = "InstanceResults/LLAMA", pattern = "*log_bins.csv")
+BLOOM.bins = list.files(path = "InstanceResults/BLOOM", pattern = "*log_bins.csv")
+
+GPT.engines <- c("GPT-3 Ada","GPT-3 Babbage","GPT-3 Curie","GPT-3 Davinci","text-davinci-001","text-davinci-002","text-davinci-003","GPT-3.5-turbo","GPT-4 v1","GPT-4 v2")
+LLAMA.engines <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA-65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
+BLOOM.engines <- c("BLOOM-560m","BLOOM-1b1","BLOOM-1b7","BLOOM-3b","BLOOM-7b1","BLOOM-176b","BLOOMz-560m","BLOOMz-1b1","BLOOMz-1b7","BLOOMz-3b" ,"BLOOMz-7b1","BLOOMz-176b")
+
+
+GPTselModels <- c("GPT-3 Davinci", "text-davinci-003", "GPT-4 v2")
+LlamaselModels <- c("LLaMA-65b", "LLaMA-2-70b", "LLaMA-2-70b-chat")
+
+
+# GPT 
+allPlotPromptsGPT <- plotPromptPerformance(files = GPT.bins, folder = "InstanceResults/GPT/", engines = GPT.engines, selModels = GPT.engines)
+allPlotPromptsLLAMA <- plotPromptPerformance(files = LLAMA.bins, folder = "InstanceResults/LLAMA/", engines = LLAMA.engines, selModels = LLAMA.engines)
+allPlotPromptsBLOOM <- plotPromptPerformance(files = BLOOM.bins, folder = "InstanceResults/BLOOM/", engines = BLOOM.engines, selModels = BLOOM.engines)
+
+
+openPDFEPS(paste0("Perfomance_area_by_Propmt_ALL"),width=16,height=22)
+grid.arrange(
+  allPlotPromptsGPT[[1]],allPlotPromptsGPT[[2]],allPlotPromptsGPT[[4]],allPlotPromptsGPT[[5]],allPlotPromptsGPT[[3]], 
+  allPlotPromptsLLAMA[[1]],allPlotPromptsLLAMA[[2]],allPlotPromptsLLAMA[[4]],allPlotPromptsLLAMA[[5]],allPlotPromptsLLAMA[[3]], 
+  allPlotPromptsBLOOM[[1]],allPlotPromptsBLOOM[[2]],allPlotPromptsBLOOM[[4]],allPlotPromptsBLOOM[[5]],allPlotPromptsBLOOM[[3]], 
+  ncol = 1)
+# do.call("grid.arrange", c(plotPerformance(GPT.bins, "InstanceResults/GPT/", engines = GPT.engines), ncol=1))
+dev.off()
+
+
+#
+
+
 
 
 
 # ------------------------------------------------------------------------------------------------
-# S2Study ----------------------------------------------------------------------------------------
+# S2 -----------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------
 
 benchs = list.files(path = "S2", pattern = "*.csv")
@@ -1274,126 +1872,8 @@ s2 <- ggplot(datam, aes(Difficulty_BinC, value, colour = variable, group = varia
  dev.off()
  
 
- # ------------------------------------------------------------------------------------------------
- # Avoidance Classification -----------------------------------------------------------------------
- # ------------------------------------------------------------------------------------------------
 
 
- df <- read.csv("./PropAvoidance/PropAvoidanceGPT.csv")
- 
- openPDFEPS <- function(file, height= PDFheight, width= PDFwidth, PDFEPS = 1) {
-   if (PDFEPS == 1) {
-     pdf(paste(file, ".pdf", sep=""), width, height)
-   } else if (PDFEPS == 2) {
-     postscript(paste(file, ".eps", sep=""), width, height, horizontal=FALSE)
-   }
- }
- 
- unique(df$Type)
- 
- df$Type <- factor(df$Type, levels = c("Spontaneously Non-conforming", "Spontaneously Epistemic", "Epistemic by Shaping Up", "Ethical by Shaping Up", "Non-conforming by Shaping Up"))
- levels(df$Type) <- c("Non-conforming (Passive)", 
-                      "Epistemic  (Passive)", 
-                      "Epistemic (Active)", 
-                      "Ethical  (Active) ", 
-                      "Non-conforming (Active)")
- 
- df$Type <- factor(as.character(df$Type), levels = c("Non-conforming (Passive)", "Non-conforming (Active)",
-                                                     "Epistemic  (Passive)", "Epistemic (Active)", 
-                                                     "Ethical  (Active) " 
- ))
- 
- dfm <- melt(df, id.vars = c("Task", "Type"))
- 
- levels(dfm$variable) <- c("GPT-3 Ada", "GPT-3 Babbage", "GPT-3 Curie", "GPT-3 Davinci", "text-davinci-001", "text-davinci-002", "text-davinci-003", "GPT-3.5 turbo", "GPT-4 v1", "GPT-4 v2")
- 
- p <- ggplot(dfm, aes (variable, value, fill = Type, label = value)) + 
-   geom_col(position = "stack") + 
-   geom_text(data = filter(dfm, value > 0), position = position_stack(vjust = .5), color = "#FFFFFF", angle = 0) +
-   facet_grid(.~Task, scales = "free_x") + 
-   scale_fill_manual("", #labels = c("Spontaneously Non-conforming", "Spontaneously Epistemic", "Epistemic by Shaping Up", "Ethical by Shaping Up", "Non-conforming by Shaping Up"),
-                     values = c("#1e346d","#5eb1bf","#eb5e28","#f49f1c","#a1c349"))+    # "#01497c", "#44bba4", "#a8dadc", "#ff7b00", "#ffdd00")) +
-   guides(fill = guide_legend(nrow = 1)) +
-   xlab("") + ylab("%")+
-   theme_minimal(base_size = 16) +
-   theme(strip.text = element_text(face = "bold")) + 
-   theme(
-     legend.position="top",
-     legend.text = element_text(size = 12),
-     plot.title = element_text(color = "black", size = 10, face = "bold"),
-     plot.subtitle = element_text(color = "black", size = 6),
-     axis.text.x = element_text(angle = 45, hjust = 1)
-   ) +
-   coord_flip()
- 
- 
- # openPDFEPS(paste0("AvoidancePropGPT"),width=12,height=5)
- # p
- # dev.off()
- 
- 
- 
- 
- 
- df <- read.csv("./PropAvoidance/PropAvoidanceLlama.csv")
- 
- openPDFEPS <- function(file, height= PDFheight, width= PDFwidth, PDFEPS = 1) {
-   if (PDFEPS == 1) {
-     pdf(paste(file, ".pdf", sep=""), width, height)
-   } else if (PDFEPS == 2) {
-     postscript(paste(file, ".eps", sep=""), width, height, horizontal=FALSE)
-   }
- }
- nrow(df)
- unique(df$Type)
- 
- df$Type <- factor(df$Type, levels = c("Spontaneously Non-conforming", "Spontaneously Epistemic", "Epistemic by Shaping Up", "Non-conforming by Shaping Up"))
- levels(df$Type) <- c("Non-conforming (Passive)", 
-                      "Epistemic  (Passive)", 
-                      "Epistemic (Active)", 
-                      "Non-conforming (Active)")
- 
- df$Type <- factor(as.character(df$Type), levels = c("Non-conforming (Passive)", "Non-conforming (Active)",
-                                                     "Epistemic  (Passive)", "Epistemic (Active)")) 
- 
- 
- dfm <- melt(df, id.vars = c("Task", "Type"))
- 
- levels(dfm$variable) <- c("LLaMA-7b","LLaMA-13b","LLaMA-30b","LLaMA 65b","LLaMA-2-7b","LLaMA-2-13b","LLaMA-2-70b","LLaMA-2-7b-chat","LLaMA-2-13b-chat","LLaMA-2-70b-chat")
- 
- p2 <- ggplot(dfm, aes (variable, value, fill = Type, label = value)) + 
-   geom_col(position = "stack") + 
-   geom_text(data = filter(dfm, value > 0), position = position_stack(vjust = .5), color = "#FFFFFF", angle = 0) +
-   facet_grid(.~Task, scales = "free_x") + 
-   scale_fill_manual("", #labels = c("Spontaneously Non-conforming", "Spontaneously Epistemic", "Epistemic by Shaping Up", "Ethical by Shaping Up", "Non-conforming by Shaping Up"),
-                     values = c("#1e346d","#5eb1bf","#eb5e28","#f49f1c"))+
-   guides(fill = guide_legend(nrow = 1)) +
-   xlab("") + ylab("%")+
-   theme_minimal(base_size = 16) +
-   theme(strip.text = element_text(face = "bold")) + 
-   theme(
-     legend.position="top",
-     legend.text = element_text(size = 12),
-     plot.title = element_text(color = "black", size = 10, face = "bold"),
-     plot.subtitle = element_text(color = "black", size = 6),
-     axis.text.x = element_text(angle = 45, hjust = 1)
-   ) +
-   coord_flip()
- 
- # openPDFEPS(paste0("AvoidanceProp"),width=14,height=5.5)
- # p2
- # dev.off()
- 
- 
- 
- openPDFEPS(paste0("AvoidanceProp.All"),width=18,height=6)
- gridExtra::grid.arrange(p,p2, ncol= 2)
- dev.off()
- 
- 
- 
- openPDFEPS(paste0("AvoidanceProp.All_v"),width=14,height=10)
- gridExtra::grid.arrange(p,p2, ncol= 1)
- dev.off()
- 
+
+
 
